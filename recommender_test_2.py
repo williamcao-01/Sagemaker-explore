@@ -23,6 +23,7 @@ batch_size = 1024
 # Training
 ##########
 
+#new function used to train the model
 def train(channel_input_dirs, hyperparameters, hosts, num_gpus, **kwargs):
     
     # get data
@@ -130,7 +131,7 @@ def eval_net(data, net, ctx, loss_function):
 
     return acc.get()[1]
 
-
+#new function used to save the model after training
 def save(model, model_dir):
     net, customer_index, product_index = model
     net.save_params('{}/model.params'.format(model_dir))
@@ -156,20 +157,16 @@ def prepare_train_data(training_dir):
     customers = df['customer_id'].value_counts()
     products = df['product_id'].value_counts()
     
-    reduced_df = df.merge(pd.DataFrame({'customer_id': customers.index})).merge(pd.DataFrame({'product_id': products.index}))
-    customers = reduced_df['customer_id'].value_counts()
-    products = reduced_df['product_id'].value_counts()
-
     # Number users and items
     customer_index = pd.DataFrame({'customer_id': customers.index, 'user': np.arange(customers.shape[0])})
     product_index = pd.DataFrame({'product_id': products.index, 'item': np.arange(products.shape[0])})
 
-    reduced_df = reduced_df.merge(customer_index).merge(product_index)
+    df = df.merge(customer_index).merge(product_index)
 
     # Split train and test
-    test_df = reduced_df.groupby('customer_id').last().reset_index()
+    test_df = df.groupby('customer_id').last().reset_index()
 
-    train_df = reduced_df.merge(test_df[['customer_id', 'product_id']], 
+    train_df = df.merge(test_df[['customer_id', 'product_id']], 
                                 on=['customer_id', 'product_id'], 
                                 how='outer', 
                                 indicator=True)
